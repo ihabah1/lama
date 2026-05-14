@@ -3,14 +3,13 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
   <meta name="theme-color" content="#1a2744">
   <meta name="color-scheme" content="light">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="description" content="מערכת ניתוח לוטו — בדיקת צירופים והמלצות מאושרות">
   <title>מערכת ניתוח לוטו חכמה</title>
-  <title>Mandel Lotto Analyzer</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="manifest" href="{% static 'manifest.json' %}">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%233d7cff'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' fill='white' font-family='sans-serif'%3E7%3C/text%3E%3C/svg%3E">
@@ -20,7 +19,7 @@
   <div class="container">
     <header class="app-header">
       <h1>מערכת ניתוח לוטו — אסטרטגיית מנדל</h1>
-      <p>ממשק רספונסיבי לדפדפן ולנייד · נתונים מהשרת</p>
+      <p class="app-header__sub">מותאם לנייד · נתונים מהשרת</p>
     </header>
 
     {% if init_error %}
@@ -40,18 +39,18 @@
           </label>
           {% endfor %}
         </div>
-        <div class="actions">
-          <button type="button" class="btn" onclick="checkNumbers()">בדוק זכאות צירוף</button>
+        <div class="actions actions--primary">
+          <button type="button" class="btn btn--block-sm" onclick="checkNumbers()">בדוק והצג מידע</button>
         </div>
         <div id="checkResult"></div>
       </section>
 
       <section class="card" aria-labelledby="sec-strategy">
         <h2 id="sec-strategy">2. בחר אסטרטגיית ייצור</h2>
-        <div class="menu-grid">
-          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('coverage')">כיסוי מקסימלי (200 צירופים)</button>
-          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('top-stat')">סטטיסטיקה חזקה (Hot Numbers)</button>
-          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('diverse')">גיוון עשרויות מקסימלי</button>
+        <div class="menu-grid menu-grid--stack">
+          <button type="button" class="btn btn-secondary btn--block-sm" onclick="fetchSuggestions('coverage')">כיסוי מקסימלי (עד 200 צירופים)</button>
+          <button type="button" class="btn btn-secondary btn--block-sm" onclick="fetchSuggestions('top-stat')">סטטיסטיקה חזקה (מספרים חמים)</button>
+          <button type="button" class="btn btn-secondary btn--block-sm" onclick="fetchSuggestions('diverse')">גיוון עשרויות מקסימלי</button>
         </div>
       </section>
 
@@ -63,7 +62,7 @@
       </section>
     </main>
 
-    <footer class="app-footer">Django · ניתן לפרוס ב-Docker ולהריץ ב-Jenkins</footer>
+    <footer class="app-footer">מותאם לנייד ולמחשב</footer>
   </div>
 
   <script>

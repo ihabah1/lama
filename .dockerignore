@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.Python
+.git
+.gitignore
+.venv
+venv
+.env
+db.sqlite3
+staticfiles
+.cursor
+.idea
+*.log
+data_Potential_Wins.csv

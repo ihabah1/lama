@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a2744">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="מערכת ניתוח לוטו — בדיקת צירופים והמלצות מאושרות">
+  <title>מערכת ניתוח לוטו חכמה</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%233d7cff'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' fill='white' font-family='sans-serif'%3E7%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip-link" href="#main">דלג לתוכן</a>
+  <div class="container">
+    <header class="app-header">
+      <h1>מערכת ניתוח לוטו — אסטרטגיית מנדל</h1>
+      <p>ממשק רספונסיבי לדפדפן ולנייד · נתונים מהשרת</p>
+    </header>
+
+    {% if init_error %}
+      <div class="banner warn" role="status">שגיאת טעינת נתונים: {{ init_error }}</div>
+    {% else %}
+      <div class="banner info" role="status">נטענו {{ approved_count }} צירופים מאושרים מהמאגר.</div>
+    {% endif %}
+
+    <main id="main">
+      <section class="card" aria-labelledby="sec-check">
+        <h2 id="sec-check">1. בדוק אם הצירוף שלך נמצא ב"רשימה הלבנה"</h2>
+        <p>הזן 6 מספרים (1–37) כדי לבדוק אם הם עברו את סינוני המערכת.</p>
+        <div class="number-grid" id="numberInputs">
+          {% for i in "123456" %}
+          <label>מספר {{ forloop.counter }}
+            <input type="number" min="1" max="37" inputmode="numeric" class="lotto-in" aria-label="מספר {{ forloop.counter }}">
+          </label>
+          {% endfor %}
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" onclick="checkNumbers()">בדוק זכאות צירוף</button>
+        </div>
+        <div id="checkResult"></div>
+      </section>
+
+      <section class="card" aria-labelledby="sec-strategy">
+        <h2 id="sec-strategy">2. בחר אסטרטגיית ייצור</h2>
+        <div class="menu-grid">
+          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('coverage')">כיסוי מקסימלי (200 צירופים)</button>
+          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('top-stat')">סטטיסטיקה חזקה (Hot Numbers)</button>
+          <button type="button" class="btn btn-secondary" onclick="fetchSuggestions('diverse')">גיוון עשרויות מקסימלי</button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sec-results">
+        <h2 id="sec-results">תוצאות</h2>
+        <div id="resultsArea" class="results-area">
+          <p style="text-align:center;color:var(--muted);margin:0;">התוצאות יופיעו כאן…</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">Django · ניתן לפרוס ב-Docker ולהריץ ב-Jenkins</footer>
+  </div>
+
+  <script>
+    const API_BASE = "/api";
+
+    function getCookie(name) {
+      let v = null;
+      if (document.cookie && document.cookie !== "") {
+        document.cookie.split(";").forEach((c) => {
+          const p = c.trim();
+          if (p.startsWith(name + "=")) {
+            v = decodeURIComponent(p.slice(name.length + 1));
+          }
+        });
+      }
+      return v;
+    }
+
+    async function checkNumbers() {
+      const inputs = document.querySelectorAll(".lotto-in");
+      const numbers = Array.from(inputs).map((i) => parseInt(i.value, 10)).filter((n) => !Number.isNaN(n));
+      const resultDiv = document.getElementById("checkResult");
+      if (numbers.length !== 6) {
+        alert("נא להזין 6 מספרים תקינים");
+        return;
+      }
+      resultDiv.innerHTML = "<div class='status-msg'>בודק במאגר…</div>";
+      try {
+        const csrftoken = getCookie("csrftoken");
+        const response = await fetch(API_BASE + "/check/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrftoken ? { "X-CSRFToken": csrftoken } : {}),
+          },
+          body: JSON.stringify({ numbers }),
+        });
+        const data = await response.json();
+        if (data.status === "approved") {
+          resultDiv.innerHTML = `<div class="status-msg approved">${data.message}</div>`;
+        } else if (data.status === "rejected") {
+          resultDiv.innerHTML = `<div class="status-msg rejected">${data.message}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="status-msg rejected">${data.message || "שגיאה"}</div>`;
+        }
+      } catch (e) {
+        resultDiv.innerHTML = `<div class="status-msg rejected">שגיאה בחיבור לשרת</div>`;
+      }
+    }
+
+    async function fetchSuggestions(type) {
+      const resultsArea = document.getElementById("resultsArea");
+      resultsArea.innerHTML = "<p style='margin:0;color:var(--muted);'>מייצר תוצאות מהמאגר המאושר…</p>";
+      let endpoint = "/suggest/" + type + "/";
+      if (type === "coverage") endpoint += "?count=200";
+      try {
+        const response = await fetch(API_BASE + endpoint);
+        const data = await response.json();
+        const suggestions =
+          data.suggestions || data.diverse_suggestions || data.top_statistical_suggestions;
+        displayResults(suggestions);
+      } catch (e) {
+        resultsArea.innerHTML = "<p style='margin:0;color:var(--danger);'>שגיאה בשליפת נתונים מהשרת.</p>";
+      }
+    }
+
+    function displayResults(combos) {
+      const resultsArea = document.getElementById("resultsArea");
+      if (!combos || combos.length === 0) {
+        resultsArea.innerHTML = "<p style='margin:0;color:var(--muted);'>לא נמצאו צירופים תואמים.</p>";
+        return;
+      }
+      let html = `<h3>נמצאו ${combos.length} צירופים מאושרים</h3><div class="results-scroll">`;
+      combos.forEach((combo, index) => {
+        html += `<div class="combo-row"><strong>#${index + 1}</strong>`;
+        combo
+          .slice()
+          .sort((a, b) => a - b)
+          .forEach((num) => {
+            html += `<span class="lotto-ball">${num}</span>`;
+          });
+        html += "</div>";
+      });
+      html += "</div>";
+      resultsArea.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
